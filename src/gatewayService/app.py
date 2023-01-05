@@ -114,7 +114,7 @@ def get_rentals():
         body, errors = validate_body(request.get_json) #get_data
         if len(errors) > 0:
             return Response(
-                status=400,
+                status=200,
                 content_type='application/json',
                 response=json.dumps(errors)
             )
@@ -167,9 +167,9 @@ def get_rentals():
             response=json.dumps(rental)
         )
 
-@app.route('/api/v1/rental/<string:rentalUid>//finish', methods=["POST"])
+@app.route('/api/v1/rental/<string:rentalUid>/finish', methods=["POST"])
 def post_finish(rentaluid):
-    response = requests.post(f"http://rental:8060/api/v1/rental/{rentaluid}//finish")
+    response = requests.post(f"http://rental:8060/api/v1/rental/{rentaluid}/finish")
 
     if response is None:
         return Response(
@@ -186,20 +186,6 @@ def post_finish(rentaluid):
             response=response.text
         )
 
-    # rental = response.json()
-
-    # response = delete_data_from_service(
-    #     'http://' + os.environ['CARS_SERVICE_HOST'] + ':' + os.environ['CARS_SERVICE_PORT']
-    #     + '/api/v1/cars/' + rental['carUid'] + '/order', timeout=5)
-
-    # if response is None:
-    #     return Response(
-    #         status=500,
-    #         content_type='application/json',
-    #         response=json.dumps({
-    #             'errors': ['Cars service is unavailable.']
-    #         })
-    #     )
 
     return Response(
         status=204

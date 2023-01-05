@@ -54,16 +54,16 @@ def favicon():
 def health():
     return make_response(jsonify({}), 200)
 
-@app.route("/api/v1/payments/<string:payment_uid>", methods = ["GET"])
+@app.route("/api/v1/payment/<string:payment_uid>", methods = ["GET"])
 def get_payment(payment_uid):
-        result=PaymentDB.session.query(PaymentModel).filter(PaymentModel.rental_uid==payment_uid).one_or_none()
+        result=db.session.query(PaymentModel).filter(PaymentModel.rental_uid==payment_uid).one_or_none()
         if not result:
             abort(404)
         return make_response(jsonify(result), 200)
 
-@app.route("/api/v1/payments/<string:payment_uid>", methods = ["DELETE"])
+@app.route("/api/v1/payment/<string:payment_uid>", methods = ["DELETE"])
 def delete_payment(payment_uid):
-    payment = PaymentDB.session.query(PaymentModel).filter(PaymentModel.rental_uid==payment_uid).one_or_none()
+    payment = db.session.query(PaymentModel).filter(PaymentModel.rental_uid==payment_uid).one_or_none()
     payment.status = 'CANCELED'
 
     try:
@@ -73,7 +73,7 @@ def delete_payment(payment_uid):
         db.session.rollback()
         return make_data_response(500, message="Database delete error")
 
-@app.route('/api/v1/payments/', methods = ['POST'])
+@app.route('/api/v1/payment/', methods = ['POST'])
 def post_payment():
     try:
         if request.is_json:

@@ -151,6 +151,34 @@ def get_all_rental():
     response.headers["Location"] = f"/api/v1/rental/{new_rental.id}"
     return response
 
+@app.route('/api/v1/rental/<string:rentalUid>/finish', methods=["POST"])
+def post_rental_finish(rentaluid):
+    try:
+        rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentaluid).one_or_none()
+        if rental.status != "IN PROGRESS":
+            return Response(
+                status=403,
+                content_type='application/json',
+                response=json.dumps({
+                    'errors': ['Rental not in progres.']
+                })
+            )
+        rental.status = "FINISHED"
+        rental.save()
+        return Response(
+                status=204,
+                content_type='application/json',
+                response=json.dumps(rental.to_dict())
+            )
+    except Exception as e:
+        return Response(
+            status=404,
+            content_type='application/json',
+            response=json.dumps({
+                'errors': ['Uid not found in base.']
+            })
+        )
+
 
 if __name__ == '__main__':
     rentalDb = RentalDB()
