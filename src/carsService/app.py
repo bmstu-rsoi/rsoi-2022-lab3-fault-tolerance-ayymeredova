@@ -99,7 +99,10 @@ def args_valid(args):
 
 
 
-
+#жив или не жив наш герой?
+@app.route('/manage/health', methods=['GET'])
+def health():
+    return make_response(jsonify({}), 200)
 
 @app.route("/api/v1/cars/<string:carUid>", methods = ["GET"])
 def get_car(carUid):

@@ -49,9 +49,10 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                           'favicon.ico',mimetype='image/vnd.microsoft.icon')
 
-
-
-
+#жив или не жив наш герой?
+@app.route('/manage/health', methods=['GET'])
+def health():
+    return make_response(jsonify({}), 200)
 
 @app.route("/api/v1/payments/<string:payment_uid>", methods = ["GET"])
 def get_payment(payment_uid):

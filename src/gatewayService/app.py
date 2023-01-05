@@ -68,6 +68,10 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                           'favicon.ico',mimetype='image/vnd.microsoft.icon')
 
+#жив или не жив наш герой?
+@app.route('/manage/health', methods=['GET'])
+def health():
+    return make_response(jsonify({}), 200)
 
 
 @app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
@@ -82,7 +86,7 @@ def get_cars():
     response = requests.get("http://cars:8070/api/v1/cars", params={'page':page, "size":size})
     return make_response(response.json(), 200)
 
-# TODO!!!
+
 @app.route('/api/v1/rental/<string:rentalUid>', methods=['GET'])
 def get_rental(rental_uid):
     if "X-User-Name" not in request.headers.keys():

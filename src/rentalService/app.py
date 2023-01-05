@@ -56,6 +56,11 @@ def favicon():
                           'favicon.ico',mimetype='image/vnd.microsoft.icon')
 
 
+#жив или не жив наш герой?
+@app.route('/manage/health', methods=['GET'])
+def health():
+    return make_response(jsonify({}), 200)
+
 @app.route("/api/v1/rental/<string:rentalUid>", methods = ["GET"])
 def get_all_rentals_user(rental_uid):
     result=db.session.query(RentalModel).filter(RentalModel.rental_uid==rental_uid).one_or_none()
