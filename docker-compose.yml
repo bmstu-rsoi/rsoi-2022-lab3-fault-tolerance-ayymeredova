@@ -14,7 +14,41 @@ services:
     ports:
       - "5432:5432"
 
-# TODO добавить сервисы
+  # TODO добавить сервисы
+  gateway:
+    build: src/gatewayService/
+    container_name: gateway
+    restart: on-failure
+    ports:
+      - "8080:8080"
+
+  payment:
+    build: src/paymentService/
+    container_name: payment
+    restart: on-failure
+    ports:
+      - "8050:8050"
+    depends_on:
+      - postgres
+
+
+  rental:
+    build: src/rentalService/
+    container_name: rental
+    restart: on-failure
+    ports:
+      - "8060:8060"
+    depends_on:
+      - postgres
+
+  cars:
+    build: src/carsService/
+    container_name: cars
+    restart: on-failure
+    ports:
+      - "8070:8070"
+    depends_on:
+      - postgres
 
 volumes:
   db-data:
