@@ -72,7 +72,7 @@ def get_all_rentals_user(rental_uid):
 @app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
 def delete_one_rental(rentalUid):
     rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
-    if rental.status != "IN PROGRESS":
+    if rental.status != "IN_PROGRESS":
         return Response(
             status=403,
                 content_type='application/json',
@@ -81,7 +81,7 @@ def delete_one_rental(rentalUid):
                 })
         )
     rental.status = 'CANCELED'
-# ???????
+
     rental.save()
 
     try:
@@ -90,6 +90,7 @@ def delete_one_rental(rentalUid):
     except:
         db.session.rollback()
         return make_data_response(500, message="Database delete error")
+    # return make_empty(204)
 
 
 
@@ -155,7 +156,7 @@ def get_all_rental():
 def post_rental_finish(rentaluid):
     try:
         rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentaluid).one_or_none()
-        if rental.status != "IN PROGRESS":
+        if rental.status != "IN_PROGRESS":
             return Response(
                 status=403,
                 content_type='application/json',
@@ -164,12 +165,24 @@ def post_rental_finish(rentaluid):
                 })
             )
         rental.status = "FINISHED"
-        rental.save()
-        return Response(
-                status=204,
-                content_type='application/json',
-                response=json.dumps(rental.to_dict())
-            )
+        try:
+            db.session.commit()
+            # return make_empty(204)
+            
+            return Response(
+                    status=204,
+                    content_type='application/json',
+                    response=json.dumps(rental.to_dict())
+                )
+        except:
+            db.session.rollback()
+            return make_data_response(500, message="Database delete error")
+
+        # return Response(
+        #         status=204,
+        #         content_type='application/json',
+        #         response=json.dumps(rental.to_dict())
+        #     )
     except Exception as e:
         return Response(
             status=404,
@@ -178,6 +191,8 @@ def post_rental_finish(rentaluid):
                 'errors': ['Uid not found in base.']
             })
         )
+
+
 
 
 if __name__ == '__main__':

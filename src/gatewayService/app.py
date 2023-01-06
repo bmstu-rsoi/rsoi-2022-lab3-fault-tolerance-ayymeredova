@@ -76,7 +76,24 @@ def health():
 
 @app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
 def delete_rental(rental_uid):
-    pass
+    response = requests.delete(f"http://rental:8060/api/v1/rental/{rental_uid}")
+    if response is None:
+        return Response(
+            status=500,
+            content_type='application/json',
+            response=json.dumps({
+                'errors': ['Rental service is unavailable.']
+            })
+        )
+    elif response.status_code != 200:
+        return Response(
+            status=response.status_code,
+            content_type='application/json',
+            response=response.text
+        )
+    return Response(
+        status=204
+    )
 
 
 @app.route('/api/v1/cars/', methods=['GET'])
@@ -142,12 +159,12 @@ def get_rentals():
         price = (datetime.datetime.strptime(body['dateTo'], "%Y-%m-%d").date() - \
             datetime.datetime.strptime(body['dateFrom'], "%Y-%m-%d").date()).days * car['price']
 
-        response = requests.post(f"http://payments:8050/api/v1/payment/",  data={'price': price})
+        response = requests.post(f"http://payment:8050/api/v1/payment/",  data={'price': price})
 
 
         payment = response.json()
         body['paymentUid'] = payment['paymentUid']
-        response = requests.post(f"http://rentals:8060/api/v1/rental", data=body, headers={'X-User-Name': request.headers['X-User-Name']})
+        response = requests.post(f"http://rental:8060/api/v1/rental/", data=body, headers={'X-User-Name': request.headers['X-User-Name']})
 
         if response.status_code != 200:
             return Response(
@@ -184,6 +201,20 @@ def post_finish(rentaluid):
             status=response.status_code,
             content_type='application/json',
             response=response.text
+        )
+
+    
+    rental = response.json()
+
+    response = requests.delete(f'http://cars:8070/api/v1/cars/{rental["carUid"]}/order')
+    
+    if response is None:
+        return Response(
+            status=500,
+            content_type='application/json',
+            response=json.dumps({
+                'errors': ['Cars service is unavailable.']
+            })
         )
 
 
