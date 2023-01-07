@@ -125,6 +125,7 @@ def get_rental(rentalUid):
         body['payment'] = response.json()
 
         return make_response(body, response.status_code)
+
     if request.method == "DELETE":
         response = requests.delete(f"http://rental:8060/api/v1/rental/{rentalUid}")
         if response is None:
@@ -141,6 +142,39 @@ def get_rental(rentalUid):
                 content_type='application/json',
                 response=response.text
             )
+        body = response.json()
+        response = requests.delete(f"http://cars:8070/api/v1/cars/{body['carUid']}/order")
+        if response is None:
+            return Response(
+                status=500,
+                content_type='application/json',
+                response=json.dumps({
+                    'errors': ['Rental service is unavailable.']
+                })
+            )
+        elif response.status_code >= 400:
+            return Response(
+                status=response.status_code,
+                content_type='application/json',
+                response=response.text
+            )
+
+        response = requests.delete(f"http://payment:8050/api/v1/payment/{body['paymentUid']}")
+        if response is None:
+            return Response(
+                status=500,
+                content_type='application/json',
+                response=json.dumps({
+                    'errors': ['Rental service is unavailable.']
+                })
+            )
+        elif response.status_code >= 400:
+            return Response(
+                status=response.status_code,
+                content_type='application/json',
+                response=response.text
+            )
+
         return Response(
             status=204
         )
@@ -158,15 +192,15 @@ def get_rentals():
         
         body = response.json()
 
-        
-        response = requests.get(f"http://cars:8070/api/v1/cars/{body[0]['carUid']}")
-        body[0]['car'] = response.json()
+        for i in range(len(body)):
+            response = requests.get(f"http://cars:8070/api/v1/cars/{body[i]['carUid']}")
+            body[i]['car'] = response.json()
 
-        response = requests.get(f"http://payment:8050/api/v1/payment/{body[0]['paymentUid']}")
-        body[0]['payment'] = response.json()
+            response = requests.get(f"http://payment:8050/api/v1/payment/{body[i]['paymentUid']}")
+            body[i]['payment'] = response.json()
 
-        response = requests.get(f"http://rental:8060/api/v1/rental/{body[0]['rentalUid']}")
-        body[0]["rental"] = response.json()
+            response = requests.get(f"http://rental:8060/api/v1/rental/{body[i]['rentalUid']}")
+            body[i]["rental"] = response.json()
 
         return make_response(body, response.status_code)
         # return make_response(response.json(), 200)

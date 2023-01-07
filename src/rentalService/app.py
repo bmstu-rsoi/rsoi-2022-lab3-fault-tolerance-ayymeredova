@@ -85,7 +85,12 @@ def get_all_rentals_user(rentalUid):
 
         try:
             db.session.commit()
-            return make_empty(204)
+            # return make_empty(204)
+            return Response(
+                    status=200,
+                    content_type='application/json',
+                    response=json.dumps(rental.to_dict())
+                )
         except:
             db.session.rollback()
             return make_data_response(500, message="Database delete error")

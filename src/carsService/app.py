@@ -115,7 +115,6 @@ def get_car(carUid):
 @app.route("/api/v1/cars/<string:carUid>/order", methods = ["POST"])
 def post_car(carUid):
     try:
-        # car = CarModel.select().where(CarModel.car_uid==carUid).get()
         car = db.session.query(CarModel).filter(CarModel.car_uid==carUid).one_or_none()
         if not car:
             return Response(status=404,
@@ -123,15 +122,6 @@ def post_car(carUid):
                 response=json.dumps({
                     'errors': ['Uid not found in DB.']
             }))
-
-        # if car.availability is False:
-        #     return Response(
-        #         status=403,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['The car is already ordered.']
-        #         })
-        #     )
         car.availability = False
         db.session.commit()
 
@@ -157,7 +147,6 @@ def delete_car_order(carUid):
                 })
             )
         car.availability = True
-        # car.save()
         
         db.session.commit()
         return Response(
