@@ -33,13 +33,11 @@ class PaymentDB():
 
         self.cur.execute(""" INSERT INTO payments
         (
-            id,
             payment_uid,
             status,
             price
         )
         VALUES(
-            1,
             '753f5bf8-73d0-11ed-a67e-00155dec5d05',
             'PAID',
             200000
@@ -48,13 +46,11 @@ class PaymentDB():
 
         self.cur.execute(""" INSERT INTO payments
         (
-            id,
             payment_uid,
             status,
             price
         )
         VALUES(
-            2,
             '7ffe9644-73d0-11ed-a67f-00155dec5d05',
             'CANCELED',
             400000

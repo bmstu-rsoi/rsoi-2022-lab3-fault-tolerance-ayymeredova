@@ -36,7 +36,6 @@ class RentalDB():
 
         self.cur.execute(""" INSERT INTO rentals
         (
-            id,
             rental_uid,
             username,
             payment_uid,
@@ -46,7 +45,6 @@ class RentalDB():
             status
         )
         VALUES(
-            1,
             '67ae0820-73d7-11ed-a682-00155dec5d05',
             'User1',
             '7ffe9644-73d0-11ed-a67f-00155dec5d05',
@@ -59,7 +57,6 @@ class RentalDB():
 
         self.cur.execute(""" INSERT INTO rentals
         (
-            id,
             rental_uid,
             username,
             payment_uid,
@@ -69,7 +66,6 @@ class RentalDB():
             status
         )
         VALUES(
-            2,
             'a695f106-73d7-11ed-a683-00155dec5d05',            
             'User2',
             '753f5bf8-73d0-11ed-a67e-00155dec5d05',

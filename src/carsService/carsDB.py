@@ -49,14 +49,14 @@ class CarDB():
         )
         VALUES(
             1,
-            'd0ad8de2-73d6-11ed-a680-00155dec5d05',
-            'AUDI',
-            'M5',
-            0001,
-            100, 
-            3000000,
-            'ROADSTER',
-            true
+            '109b42f3-198d-4c89-9276-a7520a7120ab',
+            'Mercedes Benz',
+            'GLA 250',
+            'ЛО777Х799',
+            249, 
+            3500,
+            'SEDAN',
+            True
             );
         """)
 
@@ -81,7 +81,7 @@ class CarDB():
             400, 
             6000000,
             'SEDAN',
-            false
+            False
             );
         """)
         

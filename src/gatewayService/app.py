@@ -16,9 +16,10 @@ from flask import send_from_directory, jsonify, make_response, json, Response, r
 # from model import CarModel, db
 import uuid
 import datetime
-
+import logging
 
 app = Flask(__name__)
+app.logger.debug("This is DEBUG log level")
 
 # db.init_app(app)
 
@@ -49,10 +50,11 @@ def make_empty(status_code):
 
 
 def validate_body(body):
-    try:
-        body = json.loads(body)
-    except:
-        return None, ['Can\'t deserialize body!']
+    print("validate_body: ", body)
+    # try:
+    #     body = json.loads(body)
+    # except:
+    #     return None, ['Can\'t deserialize body!']
 
     errors = []
     if 'carUid' not in body or type(body['carUid']) is not str or \
@@ -98,6 +100,7 @@ def delete_rental(rental_uid):
 
 @app.route('/api/v1/cars/', methods=['GET'])
 def get_cars():
+    """Забронировать автомобиль"""
     page = request.args.get('page', default=0, type=int)
     size = request.args.get('size', default=0, type=int)
     response = requests.get("http://cars:8070/api/v1/cars", params={'page':page, "size":size})
@@ -105,37 +108,49 @@ def get_cars():
 
 
 @app.route('/api/v1/rental/<string:rentalUid>', methods=['GET'])
-def get_rental(rental_uid):
+def get_rental(rentalUid):
     if "X-User-Name" not in request.headers.keys():
-        return make_data_response(400, message="Request has not X-User-Name header!")
+        return make_data_response(400, message="Request has not X-User-Name header! in get in gateway")
 
+    response = requests.get(f"http://rental:8060/api/v1/rental/{rentalUid}")
+    body = response.json()
+    print(body)
+    app.logger.info(body)
+    
+    response = requests.get(f"http://cars:8070/api/v1/cars/{body['carUid']}")
+    body['car'] = response.json()
 
-    page = request.args.get('page', default=0, type=int)
-    size = request.args.get('size', default=0, type=int)
-    response = requests.get(f"http://rental:8060/api/v1/rental/{rental_uid}", params={'page':page, "size":size})
-    return make_response(response.json(), 200)
+    response = requests.get(f"http://payment:8050/api/v1/payment/{body['paymentUid']}")
+    body['payment'] = response.json()
+
+    return make_response(body, response.status_code)
 
 @app.route('/api/v1/rental/', methods=['GET', "POST"])
 def get_rentals():
 
-    if "X-User-Name" not in request.headers.keys():
-        return make_data_response(400, message="Request has not X-User-Name header!")
     
     if request.method == "GET":
-
-        username = request.headers['X-User-Name']
+        
+        if "X-User-Name" not in request.headers:
+            return make_data_response(400, message="Request has not X-User-Name header! in get rentals get in gateway")
+        username = request.headers.get('X-User-Name')
         response = requests.get("http://rental:8060/api/v1/rental", headers={ "X-User-Name": username })
         return make_response(response.json(), 200)
 
     if request.method == "POST":
-        body, errors = validate_body(request.get_json) #get_data
+        
+        if "X-User-Name" not in request.headers:
+            return make_data_response(400, message="Request has not X-User-Name header! in get rentals post in gateway")
+        
+        body, errors = validate_body(request.get_json()) #get_data
+        print("validate_errors: ", errors)
         if len(errors) > 0:
             return Response(
-                status=200,
+                status=400,
                 content_type='application/json',
                 response=json.dumps(errors)
             )
-        username = request.headers['X-User-Name']
+        username = request.headers.get('X-User-Name')
         caruid = body['carUid']
         response = requests.post(f"http://cars:8070/api/v1/cars/{caruid}/order")
 
@@ -148,7 +163,7 @@ def get_rentals():
                     'errors': ['Car service is unavailable.']
                 })
             )
-        if response.status_code == 404 or response.status_code == 403:
+        if response.status_code >= 400:
             return Response(
                 status=response.status_code,
                 content_type='application/json',
@@ -159,14 +174,22 @@ def get_rentals():
         price = (datetime.datetime.strptime(body['dateTo'], "%Y-%m-%d").date() - \
             datetime.datetime.strptime(body['dateFrom'], "%Y-%m-%d").date()).days * car['price']
 
-        response = requests.post(f"http://payment:8050/api/v1/payment/",  data={'price': price})
+        response = requests.post(f"http://payment:8050/api/v1/payment/",  json={'price': price})
 
+        if response.status_code >= 400:
+            return Response(
+                status=response.status_code,
+                content_type='application/json',
+                response=response.text
+            )
+        
+        # body['paymentUid'] = response.headers["Location"].split('/')[-1]
 
         payment = response.json()
         body['paymentUid'] = payment['paymentUid']
-        response = requests.post(f"http://rental:8060/api/v1/rental/", data=body, headers={'X-User-Name': request.headers['X-User-Name']})
 
-        if response.status_code != 200:
+        response = requests.post(f"http://rental:8060/api/v1/rental/", json=body, headers={'X-User-Name': request.headers['X-User-Name']})
+        if response.status_code >= 400:
             return Response(
                 status=response.status_code,
                 content_type='application/json',
@@ -185,8 +208,8 @@ def get_rentals():
         )
 
 @app.route('/api/v1/rental/<string:rentalUid>/finish', methods=["POST"])
-def post_finish(rentaluid):
-    response = requests.post(f"http://rental:8060/api/v1/rental/{rentaluid}/finish")
+def post_finish(rentalUid):
+    response = requests.post(f"http://rental:8060/api/v1/rental/{rentalUid}/finish")
 
     if response is None:
         return Response(
@@ -207,7 +230,7 @@ def post_finish(rentaluid):
     rental = response.json()
 
     response = requests.delete(f'http://cars:8070/api/v1/cars/{rental["carUid"]}/order')
-    
+
     if response is None:
         return Response(
             status=500,

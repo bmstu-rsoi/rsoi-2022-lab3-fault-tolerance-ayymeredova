@@ -17,14 +17,14 @@ class RentalModel(db.Model):
     status: bool
 
     __tablename__ = 'rentals'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     rental_uid = db.Column(db.String(36), nullable = False, default=lambda: str(uuid4()))
     username = db.Column(db.String(80), nullable=False)
-    payment_uid = db.Column(db.String(36),nullable = False, default=lambda: str(uuid4()))
-    car_uid = db.Column(db.String(36), nullable = False, default=lambda: str(uuid4()))
+    payment_uid = db.Column(db.String(36),nullable = False)
+    car_uid = db.Column(db.String(36), nullable = False)
     date_from = db.Column(db.Date, nullable=False)
     date_to = db.Column(db.Date, nullable=False)
-    status=db.Column(db.Boolean, nullable=False)
+    status=db.Column(db.String(20), nullable=False)
 
     def to_dict(self):
         return {
@@ -32,8 +32,8 @@ class RentalModel(db.Model):
             "username": str(self.username),
             "paymentUid": str(self.payment_uid),
             "carUid": str(self.car_uid),
-            "dateFrom": str(self.date_from),
-            "dateTo": str(self.date_to),
+            "dateFrom": self.date_from.strftime("%Y-%m-%d"),
+            "dateTo": self.date_to.strftime("%Y-%m-%d"),
             "status": str(self.status)
         }
 

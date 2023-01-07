@@ -9,7 +9,7 @@ from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with, 
 from flask_sqlalchemy import SQLAlchemy
 from paymentDB import PaymentDB
 # from utils import make_data_response, make_empty
-from flask import send_from_directory, jsonify, make_response
+from flask import send_from_directory, jsonify, make_response, json, Response
 from sqlalchemy import exc
 from model import PaymentModel, db
 from uuid import uuid4
@@ -54,45 +54,57 @@ def favicon():
 def health():
     return make_response(jsonify({}), 200)
 
-@app.route("/api/v1/payment/<string:payment_uid>", methods = ["GET"])
-def get_payment(payment_uid):
-        result=db.session.query(PaymentModel).filter(PaymentModel.rental_uid==payment_uid).one_or_none()
+
+
+# @app.route("/api/v1/payment/<string:paymentUid>", methods = ["DELETE"])
+# def delete_payment(paymentUid):
+#     payment = db.session.query(PaymentModel).filter(PaymentModel.payment_uid==paymentUid).one_or_none()
+#     payment.status = 'CANCELED'
+
+#     try:
+#         db.session.commit()
+#         return make_empty(204)
+#     except:
+#         db.session.rollback()
+#         return make_data_response(500, message="Database delete error")
+
+@app.route("/api/v1/payment/<string:paymentUid>", methods = ["GET"])
+def get_payment(paymentUid):
+        result=db.session.query(PaymentModel).filter(PaymentModel.payment_uid==paymentUid).one_or_none()
         if not result:
             abort(404)
-        return make_response(jsonify(result), 200)
-
-@app.route("/api/v1/payment/<string:payment_uid>", methods = ["DELETE"])
-def delete_payment(payment_uid):
-    payment = db.session.query(PaymentModel).filter(PaymentModel.rental_uid==payment_uid).one_or_none()
-    payment.status = 'CANCELED'
-
-    try:
-        db.session.commit()
-        return make_empty(204)
-    except:
-        db.session.rollback()
-        return make_data_response(500, message="Database delete error")
+        return make_response(jsonify(result.to_dict()), 200)
 
 @app.route('/api/v1/payment/', methods = ['POST'])
 def post_payment():
     try:
-        if request.is_json:
-            data = request.get_json()
-            new_payment = PaymentModel(
-                payment_uid=str(uuid4()),
-                price=data["price"]
-            )
-    except ValidationError:
-            return make_response(400, message="Bad JSON format")
+        if not request.is_json:
+            raise ValidationError("must be json")
+        
+        data = request.get_json()
+        new_payment = PaymentModel(
+            payment_uid=str(uuid4()),
+            status='PAID',
+            price=data["price"]
+        )
 
-    try:
         db.session.add(new_payment)
         db.session.commit()
 
+    except ValidationError:
+            return make_response(400, message="Bad JSON format")
 
-    except:
+    except Exception as e:
+        print(e)
+        
         db.session.rollback()
-        return make_data_response(500,  message="Database delete error")
+        return make_data_response(500,  message="Database post_payment error")
+
+    return Response(
+        status=201,
+        content_type='application/json',
+        response=json.dumps(new_payment.to_dict())
+    )
 
     response = make_empty(201)
     response.headers["Location"] = f"/api/v1/payment/{new_payment.id}"

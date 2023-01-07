@@ -62,12 +62,12 @@ def health():
     return make_response(jsonify({}), 200)
 
 @app.route("/api/v1/rental/<string:rentalUid>", methods = ["GET"])
-def get_all_rentals_user(rental_uid):
-    result=db.session.query(RentalModel).filter(RentalModel.rental_uid==rental_uid).one_or_none()
+def get_all_rentals_user(rentalUid):
+    """Информация по конкретной аренде пользователя"""
+    result=db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
     if not result:
-        abort(404)
-    return make_response(jsonify(result), 200)
-
+        return make_response(jsonify({ "rentalUid": rentalUid }), 404)
+    return make_response(jsonify(result.to_dict()), 200)
 
 @app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
 def delete_one_rental(rentalUid):
@@ -95,67 +95,75 @@ def delete_one_rental(rentalUid):
 
 
 @app.route("/api/v1/rental/", methods = ["GET", "POST"])
-def get_all_rental():
+def get_post_rentals():
+    """Получить информацию о всех арендах пользователя"""
     if request.method == 'GET':
-        if 'X-User-Name' not in request.headers.keys():
+        if 'X-User-Name' not in request.headers:
             return Response(
                 status=400,
                 content_type='application/json',
                 response=json.dumps({
-                    'errors': ['Request has not X-User-Name header!']
+                    'errors': ['Request has not X-User-Name header! in get']
                 })
             )
-        user = request.headers['X-User-Name']
+        user = request.headers.get('X-User-Name')
         rental_list = db.session.query(RentalModel).filter(RentalModel.username==user).all()
         # rentals = [rental.to_dict() for rental in RentalModel.select().where(RentalModel.username == user)]
         rentals = [rental.to_dict() for rental in rental_list]
         # result=RentalModel.query.all()
-        # if not result:
-        #     abort(404)
+        if len(rentals)==0:
+            abort(404)
         return make_response(jsonify(rentals), 200)
 
     if request.method == "POST":
         try:
-            if 'X-User-Name' not in request.headers.keys():
+            if 'X-User-Name' not in request.headers:
                 return Response(
                     status=400,
                     content_type='application/json',
                     response=json.dumps({
-                        'errors': ['Request has not X-User-Name header!']
+                        'errors': ['Request has not X-User-Name header! in post ']
                     })
                 )
-            if request.is_json:
-                user = request.headers['X-User-Name']
-                data = request.get_json()
-                new_rental = RentalModel(
-                    rental_uid = str(uuid.uuid4),
-                    username = user,
-                    car_uid = uuid.UUID(data["car_uid"]),
-                    date_from = datetime.datetime.strptime(data['dateFrom'], "%Y-%m-%d").date(),
-                    date_to = datetime.datetime.strptime(data['dateTo'], "%Y-%m-%d").date(),
-                    status = "IN_PROGRESS",
-                )
+            if not request.is_json:
+                raise ValidationError(message="Bad Request Json format")
+
+            user = request.headers.get('X-User-Name')
+            data = request.get_json()
+            new_rental = RentalModel(
+                rental_uid = str(uuid.uuid4()),
+                username = user,
+                car_uid = uuid.UUID(data["carUid"]),
+                payment_uid = uuid.UUID(data["paymentUid"]),
+                date_from = datetime.datetime.strptime(data['dateFrom'], "%Y-%m-%d").date(),
+                date_to = datetime.datetime.strptime(data['dateTo'], "%Y-%m-%d").date(),
+                status = "IN_PROGRESS",
+            )
             
+            db.session.add(new_rental)
+            db.session.commit()
+
+            # return make_data_response(200, message="Successfully added new person: name: {}, address: {}, work: {}, age: {} ".format(new_person.name, 
+            # new_person.address, new_person.work, new_person.age))
         except ValidationError as error:
             return make_response(400, message="Bad JSON format")
     
-        try:
-            db.session.add(new_rental)
-            db.session.commit()
-            # return make_data_response(200, message="Successfully added new person: name: {}, address: {}, work: {}, age: {} ".format(new_person.name, 
-            # new_person.address, new_person.work, new_person.age))
-        except:
-            db.session.rollback()
-            return make_data_response(500, message="Database add error!")
+        except Exception as e:
+            app.logger.error(e)
 
-    response = make_empty(201)
-    response.headers["Location"] = f"/api/v1/rental/{new_rental.id}"
-    return response
+            db.session.rollback()
+            return make_data_response(500, message="Database post_rentals error!")
+
+    return Response(
+            status=200,
+            content_type='application/json',
+            response=json.dumps(new_rental.to_dict())
+        )
 
 @app.route('/api/v1/rental/<string:rentalUid>/finish', methods=["POST"])
-def post_rental_finish(rentaluid):
+def post_rental_finish(rentalUid):
     try:
-        rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentaluid).one_or_none()
+        rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
         if rental.status != "IN_PROGRESS":
             return Response(
                 status=403,
