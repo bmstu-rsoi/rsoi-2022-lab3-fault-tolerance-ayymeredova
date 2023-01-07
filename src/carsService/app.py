@@ -124,16 +124,15 @@ def post_car(carUid):
                     'errors': ['Uid not found in DB.']
             }))
 
-        if car.availability is False:
-            return Response(
-                status=403,
-                content_type='application/json',
-                response=json.dumps({
-                    'errors': ['The car is already ordered.']
-                })
-            )
+        # if car.availability is False:
+        #     return Response(
+        #         status=403,
+        #         content_type='application/json',
+        #         response=json.dumps({
+        #             'errors': ['The car is already ordered.']
+        #         })
+        #     )
         car.availability = False
-        # car.save()
         db.session.commit()
 
         return Response(

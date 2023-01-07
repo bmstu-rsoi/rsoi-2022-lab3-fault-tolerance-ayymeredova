@@ -61,36 +61,59 @@ def favicon():
 def health():
     return make_response(jsonify({}), 200)
 
-@app.route("/api/v1/rental/<string:rentalUid>", methods = ["GET"])
+@app.route("/api/v1/rental/<string:rentalUid>", methods = ["GET", "DELETE"])
 def get_all_rentals_user(rentalUid):
     """Информация по конкретной аренде пользователя"""
-    result=db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
-    if not result:
-        return make_response(jsonify({ "rentalUid": rentalUid }), 404)
-    return make_response(jsonify(result.to_dict()), 200)
+    if request.method == "GET":
+        result=db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
+        if not result:
+            return make_response(jsonify({ "rentalUid": rentalUid }), 404)
+        return make_response(jsonify(result.to_dict()), 200)
+    if request.method == "DELETE":
+        rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
+        if rental.status != "IN_PROGRESS":
+            return Response(
+                status=403,
+                    content_type='application/json',
+                    response=json.dumps({
+                        'errors': ['Rental not in progres.']
+                    })
+            )
+        rental.status = 'CANCELED'
 
-@app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
-def delete_one_rental(rentalUid):
-    rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
-    if rental.status != "IN_PROGRESS":
-        return Response(
-            status=403,
-                content_type='application/json',
-                response=json.dumps({
-                    'errors': ['Rental not in progres.']
-                })
-        )
-    rental.status = 'CANCELED'
+        # rental.save()
 
-    rental.save()
+        try:
+            db.session.commit()
+            return make_empty(204)
+        except:
+            db.session.rollback()
+            return make_data_response(500, message="Database delete error")
+        # return make_empty(204)
 
-    try:
-        db.session.commit()
-        return make_empty(204)
-    except:
-        db.session.rollback()
-        return make_data_response(500, message="Database delete error")
-    # return make_empty(204)
+
+# @app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
+# def delete_one_rental(rentalUid):
+#     rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
+#     if rental.status != "IN_PROGRESS":
+#         return Response(
+#             status=403,
+#                 content_type='application/json',
+#                 response=json.dumps({
+#                     'errors': ['Rental not in progres.']
+#                 })
+#         )
+#     rental.status = 'CANCELED'
+
+    # rental.save()
+
+    # try:
+    #     db.session.commit()
+    #     return make_empty(204)
+    # except:
+    #     db.session.rollback()
+    #     return make_data_response(500, message="Database delete error")
+    # # return make_empty(204)
 
 
 
@@ -108,7 +131,6 @@ def get_post_rentals():
             )
         user = request.headers.get('X-User-Name')
         rental_list = db.session.query(RentalModel).filter(RentalModel.username==user).all()
-        # rentals = [rental.to_dict() for rental in RentalModel.select().where(RentalModel.username == user)]
         rentals = [rental.to_dict() for rental in rental_list]
         # result=RentalModel.query.all()
         if len(rentals)==0:
@@ -164,18 +186,17 @@ def get_post_rentals():
 def post_rental_finish(rentalUid):
     try:
         rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
-        if rental.status != "IN_PROGRESS":
-            return Response(
-                status=403,
-                content_type='application/json',
-                response=json.dumps({
-                    'errors': ['Rental not in progres.']
-                })
-            )
+        # if rental.status != "IN_PROGRESS":
+        #     return Response(
+        #         status=403,
+        #         content_type='application/json',
+        #         response=json.dumps({
+        #             'errors': ['Rental not in progres.']
+        #         })
+        #     )
         rental.status = "FINISHED"
         try:
             db.session.commit()
-            # return make_empty(204)
             
             return Response(
                     status=204,

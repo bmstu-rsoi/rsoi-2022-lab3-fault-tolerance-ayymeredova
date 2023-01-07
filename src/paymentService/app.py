@@ -68,12 +68,23 @@ def health():
 #         db.session.rollback()
 #         return make_data_response(500, message="Database delete error")
 
-@app.route("/api/v1/payment/<string:paymentUid>", methods = ["GET"])
+@app.route("/api/v1/payment/<string:paymentUid>", methods = ["GET", "DELETE"])
 def get_payment(paymentUid):
+    if request.method == "GET":
         result=db.session.query(PaymentModel).filter(PaymentModel.payment_uid==paymentUid).one_or_none()
         if not result:
             abort(404)
         return make_response(jsonify(result.to_dict()), 200)
+    if request.method == "DELETE":
+        payment = db.session.query(PaymentModel).filter(PaymentModel.payment_uid==paymentUid).one_or_none()
+        payment.status = 'CANCELED'
+
+        try:
+            db.session.commit()
+            return make_empty(204)
+        except:
+            db.session.rollback()
+            return make_data_response(500, message="Database delete error")
 
 @app.route('/api/v1/payment/', methods = ['POST'])
 def post_payment():
