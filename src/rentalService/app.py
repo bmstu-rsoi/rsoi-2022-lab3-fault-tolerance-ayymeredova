@@ -191,20 +191,20 @@ def get_post_rentals():
 def post_rental_finish(rentalUid):
     try:
         rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
-        # if rental.status != "IN_PROGRESS":
-        #     return Response(
-        #         status=403,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Rental not in progres.']
-        #         })
-        #     )
+        if rental.status != "IN_PROGRESS":
+            return Response(
+                status=403,
+                content_type='application/json',
+                response=json.dumps({
+                    'errors': ['Rental not in progres.']
+                })
+            )
         rental.status = "FINISHED"
         try:
             db.session.commit()
             
             return Response(
-                    status=204,
+                    status=200,
                     content_type='application/json',
                     response=json.dumps(rental.to_dict())
                 )
@@ -218,6 +218,8 @@ def post_rental_finish(rentalUid):
         #         response=json.dumps(rental.to_dict())
         #     )
     except Exception as e:
+        print(e)
+        app.logger.error(e)
         return Response(
             status=404,
             content_type='application/json',

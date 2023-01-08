@@ -281,13 +281,13 @@ def post_finish(rentalUid):
 
     if response is None:
         return Response(
-            status=500,
+            status=503,
             content_type='application/json',
             response=json.dumps({
                 'errors': ['Rental service is unavailable.']
             })
         )
-    elif response.status_code != 200:
+    elif response.status_code >= 400:
         return Response(
             status=response.status_code,
             content_type='application/json',
@@ -301,7 +301,7 @@ def post_finish(rentalUid):
 
     if response is None:
         return Response(
-            status=500,
+            status=503,
             content_type='application/json',
             response=json.dumps({
                 'errors': ['Cars service is unavailable.']

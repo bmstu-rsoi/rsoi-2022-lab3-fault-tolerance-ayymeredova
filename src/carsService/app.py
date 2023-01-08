@@ -153,7 +153,10 @@ def delete_car_order(carUid):
             status=204
         )
 
-    except:
+    except Exception as e:
+        print(e)
+        app.logger.error(e)
+        
         db.session.rollback()
         return make_data_response(500, message="Database delete error")
 
