@@ -171,7 +171,10 @@ def get_rental(rentalUid):
         except requests.exceptions.ConnectionError:
             body['payment'] = ""
         else:
-            body['payment'] = response.json()
+            if response.status_code < 400:
+                body['payment'] = response.json()
+            else:
+                body['payment'] = ""
 
         return make_response(body, response.status_code)
 
@@ -220,6 +223,7 @@ def get_rental(rentalUid):
             while True:
                 try:
                     response = requests.delete(f"http://payment:8050/api/v1/payment/{paymentUid}")
+                    return
                 except requests.exceptions.ConnectionError:
                     time.sleep(5)
         t = threading.Thread(target=delete_payment, args=(body['paymentUid'], ))

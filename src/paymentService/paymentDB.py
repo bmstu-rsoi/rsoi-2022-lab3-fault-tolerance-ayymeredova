@@ -20,9 +20,9 @@ class PaymentDB():
     def check_payment_db(self):
         print("init migration")
         
-        self.cur.execute('DROP TABLE IF EXISTS payments;')
+        # self.cur.execute('DROP TABLE IF EXISTS payments;')
     
-        self.cur.execute("""CREATE TABLE payments
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS payments
         (
             id          SERIAL PRIMARY KEY,
             payment_uid uuid        NOT NULL,
@@ -41,7 +41,7 @@ class PaymentDB():
             '753f5bf8-73d0-11ed-a67e-00155dec5d05',
             'PAID',
             200000
-            );
+            ) ON CONFLICT DO NOTHING;
         """)
 
         self.cur.execute(""" INSERT INTO payments
@@ -54,7 +54,7 @@ class PaymentDB():
             '7ffe9644-73d0-11ed-a67f-00155dec5d05',
             'CANCELED',
             400000
-            );
+            ) ON CONFLICT DO NOTHING;
         """)
 
 
