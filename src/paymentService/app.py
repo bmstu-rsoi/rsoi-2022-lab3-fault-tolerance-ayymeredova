@@ -8,7 +8,6 @@ from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with, url_for
 from flask_sqlalchemy import SQLAlchemy
 from paymentDB import PaymentDB
-# from utils import make_data_response, make_empty
 from flask import send_from_directory, jsonify, make_response, json, Response
 from sqlalchemy import exc
 from model import PaymentModel, db
@@ -20,7 +19,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# migrate = Migrate(app)
 
 port = os.environ.get('PORT')
 if port is None:
@@ -54,19 +52,6 @@ def favicon():
 def health():
     return make_response(jsonify({}), 200)
 
-
-
-# @app.route("/api/v1/payment/<string:paymentUid>", methods = ["DELETE"])
-# def delete_payment(paymentUid):
-#     payment = db.session.query(PaymentModel).filter(PaymentModel.payment_uid==paymentUid).one_or_none()
-#     payment.status = 'CANCELED'
-
-#     try:
-#         db.session.commit()
-#         return make_empty(204)
-#     except:
-#         db.session.rollback()
-#         return make_data_response(500, message="Database delete error")
 
 @app.route("/api/v1/payment/<string:paymentUid>", methods = ["GET", "DELETE"])
 def get_payment(paymentUid):

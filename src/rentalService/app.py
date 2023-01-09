@@ -5,10 +5,9 @@ from marshmallow import ValidationError
 import psycopg2
 from flask import Flask, request, flash, redirect
 from flask_migrate import Migrate
-from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with, url_for
+from flask_restful import  url_for
 from flask_sqlalchemy import SQLAlchemy
 from rentalDB import RentalDB
-# from utils import make_data_response, make_empty
 from flask import send_from_directory, jsonify, make_response, Response
 from sqlalchemy import exc
 from model import RentalModel, db
@@ -81,11 +80,9 @@ def get_all_rentals_user(rentalUid):
             )
         rental.status = 'CANCELED'
 
-        # rental.save()
 
         try:
             db.session.commit()
-            # return make_empty(204)
             return Response(
                     status=200,
                     content_type='application/json',
@@ -94,31 +91,7 @@ def get_all_rentals_user(rentalUid):
         except:
             db.session.rollback()
             return make_data_response(500, message="Database delete error")
-        # return make_empty(204)
 
-
-# @app.route("/api/v1/rental/<string:rentalUid>", methods = ["DELETE"])
-# def delete_one_rental(rentalUid):
-#     rental = db.session.query(RentalModel).filter(RentalModel.rental_uid==rentalUid).one_or_none()
-#     if rental.status != "IN_PROGRESS":
-#         return Response(
-#             status=403,
-#                 content_type='application/json',
-#                 response=json.dumps({
-#                     'errors': ['Rental not in progres.']
-#                 })
-#         )
-#     rental.status = 'CANCELED'
-
-    # rental.save()
-
-    # try:
-    #     db.session.commit()
-    #     return make_empty(204)
-    # except:
-    #     db.session.rollback()
-    #     return make_data_response(500, message="Database delete error")
-    # # return make_empty(204)
 
 
 
@@ -137,9 +110,15 @@ def get_post_rentals():
         user = request.headers.get('X-User-Name')
         rental_list = db.session.query(RentalModel).filter(RentalModel.username==user).all()
         rentals = [rental.to_dict() for rental in rental_list]
-        # result=RentalModel.query.all()
         if len(rentals)==0:
-            abort(404)
+            # abort(404)
+            return Response(
+                status=404,
+                content_type='application/json',
+                response=json.dumps({
+                    'errors': ['Users not found in rental']
+                })
+            )
         return make_response(jsonify(rentals), 200)
 
     if request.method == "POST":
@@ -170,16 +149,24 @@ def get_post_rentals():
             db.session.add(new_rental)
             db.session.commit()
 
-            # return make_data_response(200, message="Successfully added new person: name: {}, address: {}, work: {}, age: {} ".format(new_person.name, 
-            # new_person.address, new_person.work, new_person.age))
         except ValidationError as error:
-            return make_response(400, message="Bad JSON format")
+            return Response(
+                    status=400,
+                    content_type='application/json',
+                    response=json.dumps({
+                        'errors': ['Bad JSON format']
+                    })
+                )
     
         except Exception as e:
-            app.logger.error(e)
-
             db.session.rollback()
-            return make_data_response(500, message="Database post_rentals error!")
+            return Response(
+                    status=500,
+                    content_type='application/json',
+                    response=json.dumps({
+                        'errors': ['Database post_rentals error!']
+                    })
+                )
 
     return Response(
             status=200,
@@ -202,21 +189,16 @@ def post_rental_finish(rentalUid):
         rental.status = "FINISHED"
         try:
             db.session.commit()
-            
             return Response(
-                    status=200,
-                    content_type='application/json',
-                    response=json.dumps(rental.to_dict())
-                )
+            status=200,
+            content_type='application/json',
+            response=json.dumps(rental.to_dict())
+        )
+
         except:
             db.session.rollback()
             return make_data_response(500, message="Database delete error")
 
-        # return Response(
-        #         status=204,
-        #         content_type='application/json',
-        #         response=json.dumps(rental.to_dict())
-        #     )
     except Exception as e:
         print(e)
         app.logger.error(e)
@@ -227,9 +209,7 @@ def post_rental_finish(rentalUid):
                 'errors': ['Uid not found in base.']
             })
         )
-
-
-
+    
 
 if __name__ == '__main__':
     rentalDb = RentalDB()
