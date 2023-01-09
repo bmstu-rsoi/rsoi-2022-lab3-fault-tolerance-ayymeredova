@@ -161,7 +161,6 @@ def get_all_cars():
     """Получить список всех доступных для бронирования автомобилей"""
     page, size, show_all, errors = args_valid(request.args)
     if len(errors) > 0:
-        # return make_response(400, message="Not all args is given/!")
         return Response(
             status=400,
             content_type="application/json",

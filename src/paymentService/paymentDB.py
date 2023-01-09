@@ -20,7 +20,6 @@ class PaymentDB():
     def check_payment_db(self):
         print("init migration")
         
-        # self.cur.execute('DROP TABLE IF EXISTS payments;')
     
         self.cur.execute("""CREATE TABLE IF NOT EXISTS payments
         (

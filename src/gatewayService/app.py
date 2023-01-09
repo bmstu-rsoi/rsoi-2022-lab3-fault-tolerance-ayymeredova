@@ -2,18 +2,14 @@ from email import message
 import os 
 import sys
 from marshmallow import ValidationError
-# import psycopg2
+
 from flask import Flask, flash, redirect
 import requests
 
-# from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with, url_for
-# from flask_sqlalchemy import SQLAlchemy
-# from carsDB import CarDB
-# from utils import make_data_response, make_empty
+
 from flask import send_from_directory, jsonify, make_response, json, Response, request
-# from sqlalchemy import exc
-# from model import CarModel, db
+
 import uuid
 import datetime
 import logging
@@ -23,9 +19,7 @@ import time
 app = Flask(__name__)
 app.logger.debug("This is DEBUG log level")
 
-# db.init_app(app)
 
-# migrate = Migrate(app)
 
 port = os.environ.get('PORT')
 if port is None:
@@ -76,16 +70,6 @@ def health():
 @app.route('/api/v1/cars/', methods=['GET'])
 def get_cars():
     """Забронировать автомобиль"""
-    # try:
-    #     check_car_service = requests.get("http://cars:8070/manage/health")
-    # except requests.exceptions.ConnectionError:
-    #         return Response(
-    #             status=503,
-    #             content_type='application/json',
-    #             response=json.dumps({
-    #                 'errors': ['Car service is unavailable.']
-    #             })
-    #         )
     page = request.args.get('page', default=0, type=int)
     size = request.args.get('size', default=0, type=int)
     try:
@@ -113,16 +97,7 @@ def get_rental(rentalUid):
                     'errors': ['Request has not X-User-Name header!']
                 })
             )
-        # try:
-        #     check_rental_service = requests.get("http://rental:8060/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #      return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Rental service is unavailable.']
-        #         })
-        #     )
+
         try:
             response = requests.get(f"http://rental:8060/api/v1/rental/{rentalUid}")
         except requests.exceptions.ConnectionError:
@@ -135,16 +110,7 @@ def get_rental(rentalUid):
             )
         body = response.json()
 
-        # try:
-        #    check_car_service = requests.get("http://cars:8070/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Cars service is unavailable.']
-        #         })
-        #     )
+
         try:
             response = requests.get(f"http://cars:8070/api/v1/cars/{body['carUid']}")
         except requests.exceptions.ConnectionError:
@@ -156,16 +122,7 @@ def get_rental(rentalUid):
                 })
             )
         body['car'] = response.json()
-        # try:
-        #     check_payment_service = requests.get("http://payment:8050//manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Payment service is unavailable.']
-        #         })
-        #     )
+
         try:
             response = requests.get(f"http://payment:8050/api/v1/payment/{body['paymentUid']}")
         except requests.exceptions.ConnectionError:
@@ -229,26 +186,6 @@ def get_rental(rentalUid):
         t = threading.Thread(target=delete_payment, args=(body['paymentUid'], ))
         t.start()
 
-        # try:
-        #     response = requests.delete(f"http://payment:8050/api/v1/payment/{body['paymentUid']}")
-        # except:
-        #     response = None
-
-        # if response is None:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #          response=json.dumps({
-        #             'message': "Payment Service unavailable"
-        #         })
-        #     )
-        # elif response.status_code >= 400:
-        #     return Response(
-        #         status=response.status_code,
-        #         content_type='application/json',
-        #         response=response.text
-        #     )
-
         return Response(
             status=204
         )
@@ -261,36 +198,6 @@ def get_rentals():
             return make_data_response(400, message="Request has not X-User-Name header! in get rentals get in gateway")
         username = request.headers.get('X-User-Name')
 
-        # try:
-        #     check_rental_service = requests.get("http://rental:8060/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Rental service is unavailable.']
-        #         })
-        #     )
-        # try:
-        #     check_car_service = requests.get("http://cars:8070/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Car service is unavailable.']
-        #         })
-        #     )
-        # try:
-        #     check_payment_service = requests.get("http://payment:8050/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['payment service is unavailable.']
-        #         })
-        #     )
 
         try:
             response = requests.get("http://rental:8060/api/v1/rental", headers={ "X-User-Name": username })
@@ -363,16 +270,7 @@ def get_rentals():
             )
         username = request.headers.get('X-User-Name')
         caruid = body['carUid']
-        # try:
-        #     check_car_service = requests.get("http://cars:8070/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Car service is unavailable.']
-        #         })
-        #     )
+
         try:
             response = requests.post(f"http://cars:8070/api/v1/cars/{caruid}/order")
         except:
@@ -395,16 +293,7 @@ def get_rentals():
         car = response.json()
         price = (datetime.datetime.strptime(body['dateTo'], "%Y-%m-%d").date() - \
             datetime.datetime.strptime(body['dateFrom'], "%Y-%m-%d").date()).days * car['price']
-        # try:
-        #     check_payment_service = requests.get("http://payment:8050/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Payment service is unavailable.']
-        #         })
-        #     )
+
         try:
             response = requests.post(f"http://payment:8050/api/v1/payment/",  json={'price': price})
         except:
@@ -424,20 +313,10 @@ def get_rentals():
                 response=response.text
             )
         
-        # body['paymentUid'] = response.headers["Location"].split('/')[-1]
 
         payment = response.json()
         body['paymentUid'] = payment['paymentUid']
-        # try:
-        #     check_rental_service = requests.get("http://rental:8060/manage/health")
-        # except requests.exceptions.ConnectionError:
-        #     return Response(
-        #         status=503,
-        #         content_type='application/json',
-        #         response=json.dumps({
-        #             'errors': ['Rental service is unavailable.']
-        #         })
-        #     )
+
         try:
             response = requests.post(f"http://rental:8060/api/v1/rental/", json=body, headers={'X-User-Name': request.headers['X-User-Name']})
         except:
@@ -470,17 +349,6 @@ def get_rentals():
 
 @app.route('/api/v1/rental/<string:rentalUid>/finish', methods=["POST"])
 def post_finish(rentalUid):
-    # try:
-    #     check_rental_service = requests.get("http://rental:8060/manage/health")
-       
-    # except requests.exceptions.ConnectionError:
-    #         return Response(
-    #             status=503,
-    #             content_type='application/json',
-    #             response=json.dumps({
-    #                 'errors': ['rental service is unavailable.']
-    #             })
-    #         )
     try:
         response = requests.post(f"http://rental:8060/api/v1/rental/{rentalUid}/finish")
     except:
@@ -502,16 +370,6 @@ def post_finish(rentalUid):
 
     
     rental = response.json()
-    # try:
-    #     check_car_service = requests.get("http://cars:8070/manage/health")
-    # except requests.exceptions.ConnectionError:
-    #         return Response(
-    #             status=503,
-    #             content_type='application/json',
-    #             response=json.dumps({
-    #                 'errors': ['Car service is unavailable.']
-    #             })
-    #         )
     try:
         response = requests.delete(f'http://cars:8070/api/v1/cars/{rental["carUid"]}/order')
     except:
