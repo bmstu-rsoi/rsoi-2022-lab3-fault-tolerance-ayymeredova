@@ -62,9 +62,11 @@ def get_payment(paymentUid):
         return make_response(jsonify(result.to_dict()), 200)
     if request.method == "DELETE":
         payment = db.session.query(PaymentModel).filter(PaymentModel.payment_uid==paymentUid).one_or_none()
-        payment.status = 'CANCELED'
-
+        if not payment:
+            return make_empty(204)
+    
         try:
+            payment.status = 'CANCELED'
             db.session.commit()
             return make_empty(204)
         except:
